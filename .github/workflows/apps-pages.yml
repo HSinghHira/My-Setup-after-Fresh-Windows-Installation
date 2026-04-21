@@ -3,7 +3,7 @@ name: Deploy Apps
 on:
   push:
     branches:
-      - Apps
+      - main
 
 permissions:
   pages: write
