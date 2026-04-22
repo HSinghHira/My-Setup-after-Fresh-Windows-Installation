@@ -13,13 +13,16 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 # ========================
 # Result Tracking
 # ========================
-$results = @()
+$script:results = @()
 
 # Known winget exit codes that mean "already installed / nothing to do"
 $WINGET_NO_UPGRADE      = -1978335189  # No available upgrade found
 $WINGET_ALREADY_PRESENT = -1978335150  # Package already installed
 $WINGET_NOT_FOUND       = -1978335212  # No package found matching input criteria
 
+# ========================
+# Helper: Install via winget
+# ========================
 function Install-WingetApp {
     param(
         [string]$Id,
@@ -51,15 +54,82 @@ function Install-WingetApp {
         Write-Host "[$timestamp] ✅ $Label installed successfully." -ForegroundColor Green
         $script:results += [PSCustomObject]@{ App = $Label; Status = "Installed" }
     } elseif ($exitCode -eq $WINGET_NO_UPGRADE -or $exitCode -eq $WINGET_ALREADY_PRESENT) {
-        # winget found it installed but with no upgrade available — not a real failure
         Write-Host "[$timestamp] ⏭  $Label is already up to date." -ForegroundColor Yellow
         $script:results += [PSCustomObject]@{ App = $Label; Status = "Skipped" }
     } elseif ($exitCode -eq $WINGET_NOT_FOUND) {
-        # Package not found in the specified source — warn but don't hard-fail
         Write-Host "[$timestamp] ⚠️  $Label not found in source '$Source' — skipping." -ForegroundColor Yellow
         $script:results += [PSCustomObject]@{ App = $Label; Status = "Not Found" }
     } else {
         Write-Host "[$timestamp] ❌ $Label failed (exit code $exitCode)." -ForegroundColor Red
+        $script:results += [PSCustomObject]@{ App = $Label; Status = "Failed" }
+    }
+}
+
+# ========================
+# Helper: Install unlisted Store app via store.rg-adguard.net
+# ========================
+function Install-AppxFromStore {
+    param(
+        [string]$ProductId,
+        [string]$Label
+    )
+
+    $timestamp = Get-Date -Format "HH:mm:ss"
+
+    # Check if already installed by searching for the package family name pattern
+    $existing = Get-AppxPackage -AllUsers 2>$null | Where-Object { $_.Name -like "*$Label*" -or $_.PackageFamilyName -like "*$ProductId*" }
+    if ($existing) {
+        Write-Host "[$timestamp] ⏭  Skipping $Label (already installed)" -ForegroundColor Yellow
+        $script:results += [PSCustomObject]@{ App = $Label; Status = "Skipped" }
+        return
+    }
+
+    Write-Host "[$timestamp] 📦 Installing $Label via store.rg-adguard.net..." -ForegroundColor Cyan
+
+    try {
+        # Query the adguard proxy to get the package file listing
+        $apiUrl = "https://store.rg-adguard.net/api/GetFiles"
+        $body   = "type=ProductId&url=$ProductId&ring=Retail&lang=en-US"
+        $response = Invoke-WebRequest -Uri $apiUrl -Method Post -Body $body -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -ErrorAction Stop
+
+        # Parse out all direct download links from the HTML response
+        $links = [regex]::Matches($response.Content, 'href="(https://[^"]+\.(msixbundle|appxbundle|msix|appx))"') |
+                 ForEach-Object { $_.Groups[1].Value }
+
+        if (-not $links) {
+            Write-Host "[$timestamp] ⚠️  No download links found for $Label ($ProductId). The app may have been removed." -ForegroundColor Yellow
+            $script:results += [PSCustomObject]@{ App = $Label; Status = "Not Found" }
+            return
+        }
+
+        # Prefer .msixbundle or .appxbundle; pick the first match
+        $preferredExts = @("msixbundle", "appxbundle", "msix", "appx")
+        $downloadUrl = $null
+        foreach ($ext in $preferredExts) {
+            $downloadUrl = $links | Where-Object { $_ -match "\.$ext$" } | Select-Object -First 1
+            if ($downloadUrl) { break }
+        }
+
+        if (-not $downloadUrl) {
+            $downloadUrl = $links | Select-Object -First 1
+        }
+
+        $fileName  = [System.IO.Path]::GetFileName(([uri]$downloadUrl).LocalPath)
+        $outPath   = "$env:TEMP\$fileName"
+
+        Write-Host "[$timestamp]    Downloading $fileName..." -ForegroundColor DarkCyan
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $outPath -UseBasicParsing -ErrorAction Stop
+
+        Write-Host "[$timestamp]    Installing package..." -ForegroundColor DarkCyan
+        Add-AppxPackage -Path $outPath -ErrorAction Stop
+
+        Remove-Item $outPath -Force -ErrorAction SilentlyContinue
+
+        Write-Host "[$timestamp] ✅ $Label installed successfully." -ForegroundColor Green
+        $script:results += [PSCustomObject]@{ App = $Label; Status = "Installed" }
+
+    } catch {
+        Write-Host "[$timestamp] ❌ $Label failed: $_" -ForegroundColor Red
         $script:results += [PSCustomObject]@{ App = $Label; Status = "Failed" }
     }
 }
@@ -146,9 +216,10 @@ Write-Host ""
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
 Write-Host "  Microsoft Store Apps" -ForegroundColor White
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
-Install-WingetApp -Id "9PKTQ5699M62"                       -Label "iCloud"             -Source "msstore"
-Install-WingetApp -Id "9P64KGF20H0T"                       -Label "iTunes"             -Source "msstore"
-Install-WingetApp -Id "9N7JSXC1SJK6"                       -Label "Ollama"             -Source "msstore"
+Install-WingetApp    -Id "9PKTQ5699M62"  -Label "iCloud"        -Source "msstore"
+Install-WingetApp    -Id "9n7jsxc1sjk6"  -Label "Blip"          -Source "msstore"
+# Edison Mail is no longer listed on the Microsoft Store — install via store.rg-adguard.net
+Install-AppxFromStore -ProductId "9p64kgf20h0t" -Label "Edison Mail"
 
 # ========================
 # Package Upgrades (with prompt)
@@ -227,10 +298,10 @@ Write-Host "━━━━━━━━━━━━━━━━━━━━━━�
 Write-Host "  Setup Summary" -ForegroundColor White
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
 
-$installed = $results | Where-Object { $_.Status -eq "Installed" }
-$skipped   = $results | Where-Object { $_.Status -eq "Skipped" }
-$notFound  = $results | Where-Object { $_.Status -eq "Not Found" }
-$failed    = $results | Where-Object { $_.Status -eq "Failed" }
+$installed = $script:results | Where-Object { $_.Status -eq "Installed" }
+$skipped   = $script:results | Where-Object { $_.Status -eq "Skipped" }
+$notFound  = $script:results | Where-Object { $_.Status -eq "Not Found" }
+$failed    = $script:results | Where-Object { $_.Status -eq "Failed" }
 
 Write-Host "✅ Installed  ($($installed.Count)):" -ForegroundColor Green
 $installed | ForEach-Object { Write-Host "   - $($_.App)" -ForegroundColor Green }
