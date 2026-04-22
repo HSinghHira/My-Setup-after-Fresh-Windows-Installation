@@ -66,7 +66,7 @@ function Install-WingetApp {
 }
 
 # ========================
-# Helper: Install unlisted Store app via store.rg-adguard.net
+# Helper: Install unlisted Store app via msft-store.tplant.com.au
 # ========================
 function Install-AppxFromStore {
     param(
@@ -76,46 +76,38 @@ function Install-AppxFromStore {
 
     $timestamp = Get-Date -Format "HH:mm:ss"
 
-    # Check if already installed by searching for the package family name pattern
-    $existing = Get-AppxPackage -AllUsers 2>$null | Where-Object { $_.Name -like "*$Label*" -or $_.PackageFamilyName -like "*$ProductId*" }
+    # Check if already installed
+    $existing = Get-AppxPackage -AllUsers 2>$null | Where-Object { $_.Name -like "*Edison*" -or $_.PackageFamilyName -like "*$ProductId*" }
     if ($existing) {
         Write-Host "[$timestamp] ⏭  Skipping $Label (already installed)" -ForegroundColor Yellow
         $script:results += [PSCustomObject]@{ App = $Label; Status = "Skipped" }
         return
     }
 
-    Write-Host "[$timestamp] 📦 Installing $Label via store.rg-adguard.net..." -ForegroundColor Cyan
+    Write-Host "[$timestamp] 📦 Installing $Label via msft-store.tplant.com.au..." -ForegroundColor Cyan
 
     try {
-        # Query the adguard proxy to get the package file listing
-        $apiUrl = "https://store.rg-adguard.net/api/GetFiles"
-        $body   = "type=ProductId&url=$ProductId&ring=Retail&lang=en-US"
-        $response = Invoke-WebRequest -Uri $apiUrl -Method Post -Body $body -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -ErrorAction Stop
+        # Query the tplant API for package info
+        $storeUrl = "https://apps.microsoft.com/detail/$ProductId"
+        $apiUrl   = "https://msft-store.tplant.com.au/api/Packages?id=$storeUrl&environment=Production&inputform=url"
 
-        # Parse out all direct download links from the HTML response
-        $links = [regex]::Matches($response.Content, 'href="(https://[^"]+\.(msixbundle|appxbundle|msix|appx))"') |
-                 ForEach-Object { $_.Groups[1].Value }
+        $packages = Invoke-RestMethod -Uri $apiUrl -Method Get -ErrorAction Stop
 
-        if (-not $links) {
-            Write-Host "[$timestamp] ⚠️  No download links found for $Label ($ProductId). The app may have been removed." -ForegroundColor Yellow
+        if (-not $packages -or $packages.Count -eq 0) {
+            Write-Host "[$timestamp] ⚠️  No packages found for $Label ($ProductId)." -ForegroundColor Yellow
             $script:results += [PSCustomObject]@{ App = $Label; Status = "Not Found" }
             return
         }
 
-        # Prefer .msixbundle or .appxbundle; pick the first match
-        $preferredExts = @("msixbundle", "appxbundle", "msix", "appx")
-        $downloadUrl = $null
-        foreach ($ext in $preferredExts) {
-            $downloadUrl = $links | Where-Object { $_ -match "\.$ext$" } | Select-Object -First 1
-            if ($downloadUrl) { break }
+        # Prefer x64, fall back to neutral/arm64
+        $package = $packages | Where-Object { $_.packagefilename -like "*x64*" } | Select-Object -First 1
+        if (-not $package) {
+            $package = $packages | Select-Object -First 1
         }
 
-        if (-not $downloadUrl) {
-            $downloadUrl = $links | Select-Object -First 1
-        }
-
-        $fileName  = [System.IO.Path]::GetFileName(([uri]$downloadUrl).LocalPath)
-        $outPath   = "$env:TEMP\$fileName"
+        $downloadUrl = $package.packagedownloadurl
+        $fileName    = $package.packagefilename
+        $outPath     = "$env:TEMP\$fileName"
 
         Write-Host "[$timestamp]    Downloading $fileName..." -ForegroundColor DarkCyan
         Invoke-WebRequest -Uri $downloadUrl -OutFile $outPath -UseBasicParsing -ErrorAction Stop
@@ -218,7 +210,7 @@ Write-Host "  Microsoft Store Apps" -ForegroundColor White
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
 Install-WingetApp    -Id "9PKTQ5699M62"  -Label "iCloud"        -Source "msstore"
 Install-WingetApp    -Id "9n7jsxc1sjk6"  -Label "Blip"          -Source "msstore"
-# Edison Mail is no longer listed on the Microsoft Store — install via store.rg-adguard.net
+# Edison Mail is no longer listed on the Microsoft Store — install via msft-store.tplant.com.au
 Install-AppxFromStore -ProductId "9p64kgf20h0t" -Label "Edison Mail"
 
 # ========================
