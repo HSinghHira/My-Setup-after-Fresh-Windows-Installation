@@ -173,6 +173,7 @@ Install-WingetApp -Id "flux.flux"                          -Label "f.lux"
 Install-WingetApp -Id "riyasy.FlyPhotos"                   -Label "FlyPhotos"
 Install-WingetApp -Id "UnifiedIntents.UnifiedRemote"       -Label "Unified Remote"
 Install-WingetApp -Id "Ditto.Ditto"                        -Label "Ditto"
+Install-WingetApp -Id "Microsoft.Microsoft365"             -Label "Microsoft 365"             -Source "msstore"
 
 # ========================
 # Dev Setup
