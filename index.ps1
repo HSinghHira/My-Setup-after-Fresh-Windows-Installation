@@ -15,6 +15,11 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 # ========================
 $results = @()
 
+# Known winget exit codes that mean "already installed / nothing to do"
+$WINGET_NO_UPGRADE      = -1978335189  # No available upgrade found
+$WINGET_ALREADY_PRESENT = -1978335150  # Package already installed
+$WINGET_NOT_FOUND       = -1978335212  # No package found matching input criteria
+
 function Install-WingetApp {
     param(
         [string]$Id,
@@ -25,9 +30,9 @@ function Install-WingetApp {
 
     $timestamp = Get-Date -Format "HH:mm:ss"
 
-    # Check if already installed
+    # Use -SimpleMatch so special characters like ++ are treated literally, not as regex
     $checkArgs = @("list", "--id", $Id, "--source", $Source, "--accept-source-agreements")
-    $installed = winget @checkArgs 2>&1 | Select-String $Id
+    $installed = winget @checkArgs 2>&1 | Select-String -SimpleMatch $Id
     if ($installed) {
         Write-Host "[$timestamp] ⏭  Skipping $Label (already installed)" -ForegroundColor Yellow
         $script:results += [PSCustomObject]@{ App = $Label; Status = "Skipped" }
@@ -40,11 +45,21 @@ function Install-WingetApp {
     if ($Version -ne "") { $installArgs += @("--version", $Version) }
 
     winget @installArgs
-    if ($LASTEXITCODE -eq 0) {
+    $exitCode = $LASTEXITCODE
+
+    if ($exitCode -eq 0) {
         Write-Host "[$timestamp] ✅ $Label installed successfully." -ForegroundColor Green
         $script:results += [PSCustomObject]@{ App = $Label; Status = "Installed" }
+    } elseif ($exitCode -eq $WINGET_NO_UPGRADE -or $exitCode -eq $WINGET_ALREADY_PRESENT) {
+        # winget found it installed but with no upgrade available — not a real failure
+        Write-Host "[$timestamp] ⏭  $Label is already up to date." -ForegroundColor Yellow
+        $script:results += [PSCustomObject]@{ App = $Label; Status = "Skipped" }
+    } elseif ($exitCode -eq $WINGET_NOT_FOUND) {
+        # Package not found in the specified source — warn but don't hard-fail
+        Write-Host "[$timestamp] ⚠️  $Label not found in source '$Source' — skipping." -ForegroundColor Yellow
+        $script:results += [PSCustomObject]@{ App = $Label; Status = "Not Found" }
     } else {
-        Write-Host "[$timestamp] ❌ $Label failed (exit code $LASTEXITCODE)." -ForegroundColor Red
+        Write-Host "[$timestamp] ❌ $Label failed (exit code $exitCode)." -ForegroundColor Red
         $script:results += [PSCustomObject]@{ App = $Label; Status = "Failed" }
     }
 }
@@ -136,13 +151,25 @@ Install-WingetApp -Id "9P64KGF20H0T"                       -Label "iTunes"      
 Install-WingetApp -Id "9N7JSXC1SJK6"                       -Label "Ollama"             -Source "msstore"
 
 # ========================
-# Upgrade All
+# Package Upgrades (with prompt)
 # ========================
 Write-Host ""
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
-Write-Host "  Upgrading all installed packages" -ForegroundColor White
+Write-Host "  Package Upgrades" -ForegroundColor White
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
-winget upgrade --all --silent --accept-package-agreements --accept-source-agreements
+
+Write-Host "Checking for available upgrades..." -ForegroundColor Cyan
+winget upgrade
+
+Write-Host ""
+$upgradeChoice = Read-Host "Would you like to upgrade all packages now? (y/n)"
+if ($upgradeChoice -match "^[Yy]") {
+    Write-Host "Upgrading all packages..." -ForegroundColor Cyan
+    winget upgrade --all --silent --accept-package-agreements --accept-source-agreements
+    Write-Host "✅ All packages upgraded." -ForegroundColor Green
+} else {
+    Write-Host "⏭  Skipping upgrades." -ForegroundColor Yellow
+}
 
 # ========================
 # AI / Ollama Model
@@ -172,7 +199,7 @@ if ($ollamaCmd) {
 
     # Check if model is already pulled
     $pulledModels = & $ollamaCmd list 2>&1
-    if ($pulledModels -match "llama3.1:8b") {
+    if ($pulledModels -match "llama3\.1:8b") {
         Write-Host "⏭  llama3.1:8b already downloaded — skipping pull." -ForegroundColor Yellow
         $results += [PSCustomObject]@{ App = "llama3.1:8b model"; Status = "Skipped" }
     } else {
@@ -202,19 +229,25 @@ Write-Host "━━━━━━━━━━━━━━━━━━━━━━�
 
 $installed = $results | Where-Object { $_.Status -eq "Installed" }
 $skipped   = $results | Where-Object { $_.Status -eq "Skipped" }
+$notFound  = $results | Where-Object { $_.Status -eq "Not Found" }
 $failed    = $results | Where-Object { $_.Status -eq "Failed" }
 
-Write-Host "✅ Installed ($($installed.Count)):" -ForegroundColor Green
+Write-Host "✅ Installed  ($($installed.Count)):" -ForegroundColor Green
 $installed | ForEach-Object { Write-Host "   - $($_.App)" -ForegroundColor Green }
 
-Write-Host "⏭  Skipped  ($($skipped.Count)):" -ForegroundColor Yellow
+Write-Host "⏭  Skipped   ($($skipped.Count)):" -ForegroundColor Yellow
 $skipped | ForEach-Object { Write-Host "   - $($_.App)" -ForegroundColor Yellow }
 
+if ($notFound.Count -gt 0) {
+    Write-Host "🔍 Not Found ($($notFound.Count)):" -ForegroundColor DarkYellow
+    $notFound | ForEach-Object { Write-Host "   - $($_.App)" -ForegroundColor DarkYellow }
+}
+
 if ($failed.Count -gt 0) {
-    Write-Host "❌ Failed   ($($failed.Count)):" -ForegroundColor Red
+    Write-Host "❌ Failed    ($($failed.Count)):" -ForegroundColor Red
     $failed | ForEach-Object { Write-Host "   - $($_.App)" -ForegroundColor Red }
 } else {
-    Write-Host "❌ Failed   (0)" -ForegroundColor DarkGray
+    Write-Host "❌ Failed    (0)" -ForegroundColor DarkGray
 }
 
 Write-Host ""
