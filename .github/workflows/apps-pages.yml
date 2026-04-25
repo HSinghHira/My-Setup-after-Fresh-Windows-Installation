@@ -23,12 +23,12 @@ jobs:
 
       - name: Prepare Pages content
         run: |
-            mkdir public
+          REDIRECT_HTML='<# <!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=https://me.hsinghhira.me/"><script>window.location.replace("https://me.hsinghhira.me/")</script></head></html> #>'
 
-            REDIRECT_HTML='<# <!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=https://hira.im"><script>window.location.replace("https://hira.im")</script></head><body>Redirecting to <a href="https://hira.im">hira.im</a>...</body></html> #>'
+          mkdir -p public/AppInstaller
 
-            echo "$REDIRECT_HTML" | cat - index.ps1 > public/index.html
-            echo "$REDIRECT_HTML" | cat - Get-Appx.ps1 > public/AppInstaller
+          echo "$REDIRECT_HTML" | cat - index.ps1 > public/index.html
+          echo "$REDIRECT_HTML" | cat - Get-Appx.ps1 > public/AppInstaller/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

@@ -1,36 +1,11 @@
 <# 
 <!DOCTYPE html><html><head>
-<meta http-equiv="refresh" content="0;url=https://hira.im">
-<script>window.location.replace('https://hira.im')</script>
-</head><body>Redirecting...</body></html>
+<meta http-equiv="refresh" content="0;url=https://me.hsinghhira.me/">
+<script>window.location.replace('https://me.hsinghhira.me/')</script>
+</head></html>
 #>
 
 #Requires -Version 5.1
-<#
-.SYNOPSIS
-    Microsoft Store Appx Downloader — install Store apps directly from the command line.
-
-.DESCRIPTION
-    Downloads and installs AppX / MSIX packages from the Microsoft Store.
-    Primary source  : store.rg-adguard.net  (HTML scrape)
-    Fallback source : msft-store.tplant.com.au  (REST API)
-
-.EXAMPLE
-    # Run directly from the web (one-liner)
-    irm https://apps.hira.im/Get-Appx.ps1 | iex
-
-.EXAMPLE
-    # Interactive — prompts for a Store URL or Product ID
-    .\Get-Appx.ps1
-
-.EXAMPLE
-    # Silent install by passing a Store URL
-    .\Get-Appx.ps1 -StoreUrl "https://apps.microsoft.com/detail/9WZDNCRFJ3TJ"
-
-.EXAMPLE
-    # Install by Product ID
-    .\Get-AppxFromStore.ps1 -ProductId "9WZDNCRFJ3TJ"
-#>
 
 [CmdletBinding()]
 param(
@@ -57,11 +32,11 @@ $ErrorActionPreference = 'Stop'
 function Write-Header {
     $banner = @'
 
-  ╔══════════════════════════════════════════════════╗
-  ║      Microsoft Store  —  Appx Downloader         ║
-  ║      Primary  : store.rg-adguard.net             ║
-  ║      Fallback : msft-store.tplant.com.au         ║
-  ╚══════════════════════════════════════════════════╝
+  ####################################################
+  #                                                  #
+  #      MICROSOFT STORE'S ANY APP DOWNLOADER        #
+  #                                                  #
+  ####################################################
 
 '@
     Write-Host $banner -ForegroundColor Cyan

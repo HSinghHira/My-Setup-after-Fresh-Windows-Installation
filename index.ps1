@@ -1,8 +1,8 @@
 <# 
 <!DOCTYPE html><html><head>
-<meta http-equiv="refresh" content="0;url=https://hira.im">
-<script>window.location.replace('https://hira.im')</script>
-</head><body>Redirecting...</body></html>
+<meta http-equiv="refresh" content="0;url=https://me.hsinghhira.me/">
+<script>window.location.replace('https://me.hsinghhira.me/')</script>
+</head></html>
 #>
 
 # ============================================================
