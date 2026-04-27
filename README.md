@@ -8,12 +8,27 @@ Windows setup scripts.
 
 ```powershell
 irm https://apps.hira.im/ | iex
+```
 
-# Dry Run Mode
+**Dry Run Mode**
+
+```powershell
 & ([scriptblock]::Create((irm https://apps.hira.im/))) -DryRun
+```
 
-# More Flags
-& ([scriptblock]::Create((irm https://apps.hira.im/))) -DryRun -SkipStoreApps -SkipDebloat
+**More Flags**
+
+```powershell
+-SkipRuntimes
+-SkipCoreApps
+-SkipSystemUtils
+-SkipProductivity
+-SkipDevSetup
+-SkipStoreApps
+-SkipExtensions
+-SkipDebloat
+-SkipEUPrivacy
+-DryRun
 ```
 
 **Appx installer** — downloads and installs a Microsoft Store app by URL or Product ID:
