@@ -1,5 +1,5 @@
 #Requires -Version 5.1
-# Windows 11 Setup Script
+# Windows 11 Setup Script — Master Edition
 # Author: Harman Singh Hira
 # https://me.hsinghhira.me
 
@@ -23,8 +23,9 @@ $ErrorActionPreference = 'Continue'
 #  Transcript / Log File
 # ─────────────────────────────────────────────────────────────────────────────
 
-$startTime   = Get-Date
-$logFile     = Join-Path $PSScriptRoot ("setup-log-" + $startTime.ToString('yyyy-MM-dd_HH-mm') + ".txt")
+$startTime  = Get-Date
+$logRoot    = if ($PSScriptRoot) { $PSScriptRoot } else { $env:TEMP }
+$logFile    = Join-Path $logRoot ("setup-log-" + $startTime.ToString('yyyy-MM-dd_HH-mm') + ".txt")
 Start-Transcript -Path $logFile -Append | Out-Null
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -39,7 +40,7 @@ if (-not $isAdmin) {
     Write-Host "❌ This script must be run as Administrator." -ForegroundColor Red
     Write-Host "   Right-click PowerShell and choose 'Run as administrator'." -ForegroundColor Yellow
     Write-Host ""
-    Stop-Transcript | Out-Null
+    try { Stop-Transcript | Out-Null } catch {}
     exit 1
 }
 
@@ -338,7 +339,7 @@ Write-Host "━━━━━━━━━━━━━━━━━━━━━━�
 
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     Write-Host "[$( Get-Timestamp )] ❌ winget not found. Please install App Installer from the Microsoft Store and re-run." -ForegroundColor Red
-    Stop-Transcript | Out-Null
+    try { Stop-Transcript | Out-Null } catch {}
     exit 1
 }
 
@@ -517,55 +518,61 @@ if ($SkipExtensions) {
         'xyz.local-history',
         'mrmlnc.vscode-csscomb',
         'PKief.material-icon-theme',
-        'esbenp.prettier-vscode',
-        'dbaeumer.vscode-eslint',
-        'formulahendry.auto-rename-tag',
+        'maciejdems.add-to-gitignore',
+        'astro-build.astro-vscode',
         'formulahendry.auto-close-tag',
-        'christian-kohler.path-intellisense',
-        'streetsidesoftware.code-spell-checker',
-        'usernamehw.errorlens',
+        'steoates.autoimport',
+        'NuclleaR.vscode-extension-auto-import',
+        'formulahendry.auto-rename-tag',
+        'oleksandr.beatify-ejs',
+        'michelemelluso.code-beautifier',
         'aaron-bond.better-comments',
-        'oderwat.indent-rainbow',
+        'anseki.vscode-color',
+        'BrainstormDevelopment.copy-project-tree',
+        'pranaygp.vscode-css-peek',
+        'easy-snippet-maker.custom-snippet-maker',
+        'usernamehw.errorlens',
+        'rslfrkndmrky.rsl-vsc-focused-folder',
         'vincaslt.highlight-matching-tag',
-        'naumovs.color-highlight',
-        'bradlc.vscode-tailwindcss',
-        'csstools.postcss',
-        'ms-vscode.vscode-typescript-next',
-        'dsznajder.es7-react-js-snippets',
-        'burkeholland.simple-react-snippets',
-        'GraphQL.vscode-graphql',
-        'GraphQL.vscode-graphql-syntax',
-        'prisma.prisma',
-        'ms-python.python',
-        'ms-python.black-formatter',
-        'ms-python.isort',
-        'ms-toolsai.jupyter',
-        'golang.go',
-        'rust-lang.rust-analyzer',
-        'tamasfe.even-better-toml',
-        'ms-vscode.cmake-tools',
-        'twxs.cmake',
-        'ms-vscode.cpptools',
-        'ms-vscode-remote.remote-ssh',
-        'ms-vscode-remote.remote-wsl',
-        'ms-vscode.remote-explorer',
-        'ms-azuretools.vscode-docker',
-        'eamodio.gitlens',
-        'mhutchie.git-graph',
-        'GitHub.copilot',
-        'GitHub.copilot-chat',
-        'GitHub.vscode-pull-request-github',
-        'ritwickdey.LiveServer',
+        'hwencc.html-tag-wrapper',
+        'bradgashler.htmltagwrap',
+        'kisstkondoros.vscode-gutter-preview',
+        'DutchIgor.json-viewer',
         'ms-vscode.live-server',
-        'humao.rest-client',
-        'rangav.vscode-thunder-client',
-        'ms-vscode.hexeditor',
-        'redhat.vscode-yaml'
+        'ritwickdey.LiveServer',
+        'zaaack.markdown-editor',
+        'unifiedjs.vscode-mdx',
+        'josee9988.minifyall',
+        'mrkou47.npmignore',
+        'ionutvmi.path-autocomplete',
+        'christian-kohler.path-intellisense',
+        'johnpapa.vscode-peacock',
+        'esbenp.prettier-vscode',
+        'sototecnologia.remove-comments-frontend',
+        'misbahansori.svg-fold',
+        'vdanchenkov.tailwind-class-sorter',
+        'sidharthachatterjee.vscode-tailwindcss',
+        'bradlc.vscode-tailwindcss',
+        'esdete.tailwind-rainbow',
+        'bourhaouta.tailwindshades',
+        'dejmedus.tailwind-sorter',
+        'meganrogge.template-string-converter',
+        'shardulm94.trailing-spaces',
+        'Phu1237.vs-browser',
+        'westenets.vscode-backup',
+        'MarkosTh09.color-picker',
+        'redhat.vscode-yaml',
+        'streetsidesoftware.code-spell-checker'
     )
 
     $disabledExtensions = @(
-        'GitHub.copilot',
-        'GitHub.copilot-chat'
+        'tamasfe.even-better-toml',
+        'DavidKol.fastcompare',
+        'Nobuwu.mc-color',
+        'Misodee.vscode-nbt',
+        'WebCrafter.auto-type-code',
+        'adpyke.codesnap',
+        'WebNative.webnative'
     )
 
     Install-VSExtensions -EnabledExtensions $enabledExtensions -DisabledExtensions $disabledExtensions
@@ -883,4 +890,4 @@ Write-Host ""
 Write-Host "Made with ❤️ by Harman Singh Hira — https://me.hsinghhira.me" -ForegroundColor Gray
 Write-Host ""
 
-Stop-Transcript | Out-Null
+try { Stop-Transcript | Out-Null } catch {}
