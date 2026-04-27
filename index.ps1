@@ -433,7 +433,7 @@ function Remove-AppxIfPresent {
             Write-Host "[$ts]    ⏭  $Label not found — skipping." -ForegroundColor DarkGray
         }
     } catch {
-        Write-Host "[$ts]    ❌ Failed to remove $Label: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "[$ts]    ❌ Failed to remove ${Label}: $($_.Exception.Message)" -ForegroundColor Red
         Add-Result -App "Removed: $Label" -Status 'Failed'
     }
 }
@@ -1096,4 +1096,3 @@ Write-Host "Made with ❤️ by Harman Singh Hira — https://me.hsinghhira.me" 
 Write-Host ""
 
 try { Stop-Transcript | Out-Null } catch {}
-exit 0
