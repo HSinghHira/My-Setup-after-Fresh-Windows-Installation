@@ -9,13 +9,37 @@ Write-Host "------------------------------------------------------------" -Foreg
 if ($SkipEUPrivacy) {
     Write-Host "[$( Get-Timestamp )] - Skipping EU privacy unlock (flag set)." -ForegroundColor DarkGray
 } else {
-    # MinSudo.exe lives alongside this script in scripts/sections/
-    $minSudoExe = Join-Path $PSScriptRoot "MinSudo.exe"
+    # Resolve MinSudo.exe:
+    #   Local run  -> sits alongside this script in scripts\sections\
+    #   Remote run -> $PSScriptRoot is empty, so download the binary to a temp path
+    $minSudoTemp = $false
+    if ($script:isRemote) {
+        $minSudoUrl = "$($script:baseUrl)/scripts/sections/MinSudo.exe".Replace('\', '/')
+        $minSudoExe = "$env:TEMP\MinSudo_EU_$([System.IO.Path]::GetRandomFileName().Replace('.','') ).exe"
+        Write-Host "[$( Get-Timestamp )]   Downloading MinSudo.exe ..." -ForegroundColor DarkCyan
+        try {
+            $ProgressPreference = 'SilentlyContinue'
+            Invoke-WebRequest -Uri $minSudoUrl -OutFile $minSudoExe -UseBasicParsing -ErrorAction Stop
+            $minSudoTemp = $true
+            Write-Host "[$( Get-Timestamp )]   OK MinSudo.exe downloaded." -ForegroundColor Green
+        } catch {
+            Write-Host "[$( Get-Timestamp )] X Failed to download MinSudo.exe: $($_.Exception.Message)" -ForegroundColor Red
+            Add-Result -App 'EU Privacy Unlock' -Status 'Failed'
+            $minSudoExe = $null
+        }
+    } else {
+        $minSudoExe = Join-Path $PSScriptRoot "MinSudo.exe"
+    }
 
-    if (-not (Test-Path $minSudoExe)) {
+    if ($minSudoExe -and -not (Test-Path $minSudoExe)) {
         Write-Host "[$( Get-Timestamp )] X MinSudo.exe not found at: $minSudoExe" -ForegroundColor Red
         Write-Host "[$( Get-Timestamp )]   Ensure MinSudo.exe is present in scripts\sections\ and re-run." -ForegroundColor Yellow
         Add-Result -App 'EU Privacy Unlock' -Status 'Failed'
+        $minSudoExe = $null
+    }
+
+    if (-not $minSudoExe) {
+        # Failure already reported above
     } elseif ($DryRun) {
         Write-Host "[$( Get-Timestamp )] ~ [DryRun] Would run EU Privacy Unlock via bundled MinSudo.exe." -ForegroundColor Yellow
         Write-Host "[$( Get-Timestamp )] ~ [DryRun] Steps: set region to Ireland (EU), delete DeviceRegion values" -ForegroundColor Yellow
@@ -141,5 +165,10 @@ if ($key) {
 
         # Open Privacy Settings so the user can confirm the new EU options
         Start-Process "ms-settings:privacy"
-    }
-}
+
+        # Clean up downloaded MinSudo.exe if it was fetched at runtime
+        if ($minSudoTemp -and (Test-Path $minSudoExe)) {
+            Remove-Item -Path $minSudoExe -Force -ErrorAction SilentlyContinue
+        }
+    } # end else (not DryRun, minSudoExe resolved)
+} # end else (not SkipEUPrivacy)
