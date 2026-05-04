@@ -25,10 +25,23 @@ jobs:
         run: |
           REDIRECT_HTML='<# <!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=https://me.hsinghhira.me/"><script>window.location.replace("https://me.hsinghhira.me/")</script></head></html> #>'
 
+          # CLOSE_COMMENT ends any block comment that Cloudflare or GitHub Pages
+          # might inject after the script body, keeping PowerShell from seeing it.
+          CLOSE_COMMENT='<# END-OF-SCRIPT: everything below this line is HTML/CDN noise #>'
+
           mkdir -p public/AppInstaller
 
-          echo "$REDIRECT_HTML" | cat - index.ps1 > public/index.html
-          echo "$REDIRECT_HTML" | cat - Get-Appx.ps1 > public/AppInstaller/index.html
+          { echo "$REDIRECT_HTML"; cat index.ps1;    echo "$CLOSE_COMMENT"; } > public/index.html
+          { echo "$REDIRECT_HTML"; cat Get-Appx.ps1; echo "$CLOSE_COMMENT"; } > public/AppInstaller/index.html
+
+          # Serve as plain text so Cloudflare does not inject beacon scripts
+          # (the beacon is only injected into text/html responses).
+          cat > public/_headers << 'HEADERS'
+          /index.html
+          Content-Type: text/plain; charset=utf-8
+          /AppInstaller/index.html
+          Content-Type: text/plain; charset=utf-8
+          HEADERS
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
