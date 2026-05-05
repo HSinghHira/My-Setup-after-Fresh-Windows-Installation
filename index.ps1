@@ -221,6 +221,7 @@ if ($SkipDevSetup) {
     Install-WingetApp -Id 'Microsoft.VisualStudioCode' -Label 'VS Code'
     Install-WingetApp -Id 'Microsoft.WindowsTerminal'  -Label 'Windows Terminal'
     Install-WingetApp -Id 'Microsoft.PowerShell'       -Label 'PowerShell 7'
+    Install-WingetApp -Id 'Casey.Just'                 -Label 'Just - Commandline Runner'
     Install-WingetApp -Id 'astral-sh.uv'               -Label 'UV - Python Package Manager'
 
     if (Get-Command volta -ErrorAction SilentlyContinue) {
@@ -343,32 +344,5 @@ foreach ($file in $script:tempFiles) {
 }
 Write-Host "[$( Get-Timestamp )] OK Cleaned up $cleaned temp file(s)." -ForegroundColor Green
 
-# ------------------------------------------------------------------------------
-#  Section 14 - Summary
-# ------------------------------------------------------------------------------
-
-$elapsed = (Get-Date) - $startTime
-$mins    = [int]$elapsed.TotalMinutes
-$secs    = $elapsed.Seconds
-
-Write-Host ""
-Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
-Write-Host "  SETUP COMPLETE - Summary" -ForegroundColor White
-Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
-Write-Host ""
-
-$script:results | Group-Object Status | ForEach-Object {
-    $color = switch ($_.Name) { 'Installed' { 'Green' } 'Skipped' { 'DarkGray' } 'Failed' { 'Red' } default { 'Yellow' } }
-    Write-Host "$($_.Name) ($($_.Count)):" -ForegroundColor $color
-    $_.Group | ForEach-Object { Write-Host "     $($_.App)" -ForegroundColor $color }
-    Write-Host ""
-}
-
-Write-Host "(!) Total time: $mins minutes $secs seconds" -ForegroundColor Cyan
-Write-Host "(!) Log saved to Desktop: $logFile" -ForegroundColor Cyan
-Write-Host "(!) A restart may be required for all changes to take effect." -ForegroundColor Yellow
-Write-Host ""
-Write-Host "Made with <3 by Harman Singh Hira - https://me.hsinghhira.me" -ForegroundColor Gray
-Write-Host ""
-
 try { Stop-Transcript | Out-Null } catch { Write-Host "Warning: Stop-Transcript failed: $_" -ForegroundColor Yellow }
+exit 0
