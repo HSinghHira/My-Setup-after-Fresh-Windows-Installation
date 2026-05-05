@@ -312,9 +312,8 @@ if ($SkipExtensions) {
     Write-Host "[$( Get-Timestamp )] - Skipping extensions (flag set)." -ForegroundColor DarkGray
 } else {
     Install-VSExtensions `
-        -EnabledExtensions    $script:enabledExtensions  `
-        -DisabledExtensions   $script:disabledExtensions `
-        -VSCodeOnlyExtensions $script:vscodeOnlyExtensions
+        -EnabledExtensions  $script:enabledExtensions `
+        -DisabledExtensions $script:disabledExtensions
 }
 
 # --- Sections 12 & 13 (Modular) -----------------------------------------------
