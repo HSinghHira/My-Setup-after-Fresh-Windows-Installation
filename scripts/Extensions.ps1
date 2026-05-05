@@ -7,11 +7,11 @@
         'astro-build.astro-vscode',                # Astro framework support
         'formulahendry.auto-close-tag',            # Auto close HTML/XML tags
         'steoates.autoimport',                     # Auto import suggestions
-        'NuclleaR.vscode-extension-auto-import',  # Auto import for JS/TS
+        'NuclleaR.vscode-extension-auto-import',   # Auto import for JS/TS
         'formulahendry.auto-rename-tag',           # Auto rename paired tags
         'oleksandr.beatify-ejs',                   # EJS beautifier
         'michelemelluso.code-beautifier',          # Code beautifier
-        'aaron-bond.better-comments',             # Colour-coded comment annotations
+        'aaron-bond.better-comments',              # Colour-coded comment annotations
         'anseki.vscode-color',                     # Inline colour picker
         'BrainstormDevelopment.copy-project-tree',# Copy folder tree to clipboard
         'pranaygp.vscode-css-peek',               # Peek CSS from HTML
@@ -48,6 +48,7 @@
         'MarkosTh09.color-picker',                # Colour picker widget
         'redhat.vscode-yaml',                     # YAML language support
         'streetsidesoftware.code-spell-checker'   # Spell checker
+        'RooVeterinaryInc.roo-cline'              # Roo Cline
     )
 
     # ── Extensions installed but started DISABLED ─────────────────────────────

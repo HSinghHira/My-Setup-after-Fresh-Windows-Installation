@@ -294,6 +294,7 @@ if ($SkipStoreApps) {
 } else {
     Install-WingetApp -Id '9PKTQ5699M62' -Label 'iCloud' -Source 'msstore'
     Install-WingetApp -Id '9n7jsxc1sjk6' -Label 'Blip'   -Source 'msstore'
+    Install-WingetApp -Id '9nq7512cxl7t' -Label 'Python Package Manager' -Source 'msstore'
     Install-AppxFromStore -ProductId '9p64kgf20h0t' -Label 'Edison Mail' -PackageNamePattern '*Edison*'
 }
 
