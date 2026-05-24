@@ -47,19 +47,15 @@
         'westenets.vscode-backup',                # Settings & extension backup
         'MarkosTh09.color-picker',                # Colour picker widget
         'redhat.vscode-yaml',                     # YAML language support
-        'streetsidesoftware.code-spell-checker'   # Spell checker
-        'RooVeterinaryInc.roo-cline'              # Roo Cline
+        'streetsidesoftware.code-spell-checker',  # Spell checker
+        'RooVeterinaryInc.roo-cline',             # Roo Cline
+        'tamasfe.even-better-toml',               # TOML language support
+        'saber2pr.todolist'                       # To Do Extension (filename.todo)
     )
 
     # ── Extensions installed but started DISABLED ─────────────────────────────
     $script:disabledExtensions = @(
-        'tamasfe.even-better-toml',   # TOML language support
-        'DavidKol.fastcompare',       # Fast file comparison
-        'Nobuwu.mc-color',            # Minecraft colour codes
-        'Misodee.vscode-nbt',         # Minecraft NBT file support
         'WebCrafter.auto-type-code',  # Auto type code snippets
-        'adpyke.codesnap',            # Code screenshot tool
-        'WebNative.webnative'         # WebNative framework support
     )
 
     # NOTE: $vscodeOnlyExtensions has been removed.
