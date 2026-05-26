@@ -55,7 +55,7 @@
 
     # ── Extensions installed but started DISABLED ─────────────────────────────
     $script:disabledExtensions = @(
-        'WebCrafter.auto-type-code',  # Auto type code snippets
+        'WebCrafter.auto-type-code'  # Auto type code snippets
     )
 
     # NOTE: $vscodeOnlyExtensions has been removed.
